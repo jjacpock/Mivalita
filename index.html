@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Memoria MIVALITA</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial Rounded MT Bold', 'Segoe UI', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #ff6b6b;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .instructions {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            max-width: 800px;
+            width: 100%;
+            border: 2px solid #3498db;
+        }
+        
+        .instructions h2 {
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+        
+        .folder-structure {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-family: monospace;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            max-width: 800px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 2px solid #ff6b6b;
+        }
+        
+        .info-item {
+            text-align: center;
+        }
+        
+        .info-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .game-container {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 10px;
+            max-width: 800px;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .card {
+            aspect-ratio: 3/4;
+            background-color: #3498db;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0;
+            transform-style: preserve-3d;
+            transition: transform 0.5s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card.locked {
+            cursor: not-allowed;
+            opacity: 0.7;
+            background-color: #95a5a6;
+            position: relative;
+        }
+        
+        .card.locked::after {
+            content: '🔒';
+            position: absolute;
+            font-size: 2rem;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        }
+        
+        .card.flipped {
+            transform: rotateY(180deg);
+        }
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        
+        .card-front {
+            background-color: #3498db;
+            background-image: linear-gradient(45deg, #2980b9 25%, #3498db 25%, #3498db 50%, #2980b9 50%, #2980b9 75%, #3498db 75%, #3498db 100%);
+            background-size: 20px 20px;
+        }
+        
+        .card-front::after {
+            content: '?';
+            font-size: 2.5rem;
+            color: white;
+        }
+        
+        .card-back {
+            background-color: white;
+            transform: rotateY(180deg);
+            padding: 10px;
+            color: #333;
+            font-weight: bold;
+            text-align: center;
+            border: 2px solid #ff6b6b;
+        }
+        
+        .card-back.image {
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .card-back.text {
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .controls {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            background-color: #ff6b6b;
+            color: white;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:hover {
+            background-color: #ff8e8e;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #ecf0f1;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow: hidden;
+            border: 2px solid #ff6b6b;
+            max-width: 800px;
+        }
+        
+        .progress {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #ff6b6b);
+            width: 0%;
+            transition: width 0.5s;
+        }
+        
+        .special-notice {
+            background-color: #ff6b6b;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .win-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+        
+        .final-image-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .final-image {
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+            border-radius: 10px;
+            opacity: 0;
+            transform: scale(0.5);
+            transition: all 1.5s ease-out;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+            border: 3px solid #ff6b6b;
+        }
+        
+        .final-image.zoomed {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .win-stats {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+        }
+        
+        .win-buttons {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .special-card-notice {
+            background-color: #3498db;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+            display: none;
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        @media (max-width: 850px) {
+            .game-container {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .game-container {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .game-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .win-buttons {
+                top: 10px;
+                right: 10px;
+            }
+            
+            .win-stats {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Juego de Memoria MIVALITA</h1>
+        <p>Encuentra las parejas de imágenes y texto</p>
+    </header>
+    
+    <div class="game-info">
+        <div class="info-item">
+            <div>Intentos</div>
+            <div class="info-value" id="attempts">0</div>
+        </div>
+        <div class="info-item">
+            <div>Pares Encontrados</div>
+            <div class="info-value" id="matches">0/18</div>
+        </div>
+        <div class="info-item">
+            <div>Tiempo</div>
+            <div class="info-value" id="timer">0s</div>
+        </div>
+    </div>
+    
+    <div class="progress-bar">
+        <div class="progress" id="progress"></div>
+    </div>
+    
+    <div class="special-card-notice" id="special-card-notice">
+        ¡Carta especial desbloqueada! Encuentra el par de la carta sorpresa.
+    </div>
+    
+    <div class="game-container" id="game-container"></div>
+    
+    <div class="special-notice" id="special-notice">
+        ¡Último par desbloqueado! Encuentra las dos imágenes iguales.
+    </div>
+    
+    <div class="controls">
+        <button id="reset-btn">Reiniciar Juego</button>
+    </div>
+    
+    <div class="win-message" id="win-message">
+        <div class="final-image-container">
+            <img id="final-image" class="final-image" src="" alt="Imagen de finalización">
+            <div class="win-stats">
+                <p>¡Felicidades! Has completado todos los pares</p>
+                <p>Intentos: <span id="final-attempts"></span> | Tiempo: <span id="final-time"></span> segundos</p>
+            </div>
+            <div class="win-buttons">
+                <button id="play-again">Jugar de Nuevo</button>
+                <button id="close-win">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Elementos del DOM
+            const gameContainer = document.getElementById('game-container');
+            const attemptsElement = document.getElementById('attempts');
+            const matchesElement = document.getElementById('matches');
+            const timerElement = document.getElementById('timer');
+            const resetBtn = document.getElementById('reset-btn');
+            const progressBar = document.getElementById('progress');
+            const specialNotice = document.getElementById('special-notice');
+            const specialCardNotice = document.getElementById('special-card-notice');
+            const winMessage = document.getElementById('win-message');
+            const finalAttempts = document.getElementById('final-attempts');
+            const finalTime = document.getElementById('final-time');
+            const finalImage = document.getElementById('final-image');
+            const playAgainBtn = document.getElementById('play-again');
+            const closeWinBtn = document.getElementById('close-win');
+            
+            // Variables del juego
+            let attempts = 0;
+            let matches = 0;
+            let timer = 0;
+            let timerInterval;
+            let flippedCards = [];
+            let lockBoard = false;
+            let lastPairLocked = true;
+            let specialCardUnlocked = false;
+            
+            // IMAGEN FINAL PERSONALIZABLE - Cambia esta URL por la imagen que quieras mostrar al final
+            const customFinalImage = 'imagenes/us.jpg'; // Puedes cambiar por cualquier imagen
+            
+            // Pares de cartas (18 pares imagen-texto)
+            const cardPairs = [
+                { image: 'imagenes/Angello.jpg', text: 'Angello' },
+                { image: 'imagenes/Benito.jpg', text: 'Benito' },
+                { image: 'imagenes/Blue capuccino.jpg', text: 'Blue capuccino' },
+                { image: 'imagenes/Bullocin.jpg', text: 'Bullocin' },
+                { image: 'imagenes/Cacique.jpg', text: 'Cacique' },
+                { image: 'imagenes/Celeste.jpg', text: 'Celeste' },
+                { image: 'imagenes/Chantilly.jpg', text: 'Chantilly' },
+                { image: 'imagenes/Cinderella.jpg', text: 'Cinderella' },
+                { image: 'imagenes/Cirilo.jpg', text: 'Cirilo' },
+                { image: 'imagenes/Gumbalita.jpg', text: 'Gumbalita' },
+                { image: 'imagenes/Jairito.jpg', text: 'Jairito' },
+                { image: 'imagenes/kuromi.jpg', text: 'Kuromi' },
+                { image: 'imagenes/Luna.jpg', text: 'Luna' },
+                { image: 'imagenes/Mia.jpg', text: 'Mia' },
+                { image: 'imagenes/Michin.jpg', text: 'Michin' },
+                { image: 'imagenes/Oriana.jpg', text: 'Oriana' },
+                { image: 'imagenes/Sony.jpg', text: 'Sony' },
+                { image: 'imagenes/Tomas.jpg', text: 'Tomas' }
+            ];
+            
+            // Carta especial (aparece después de completar todos los pares) - AMBAS SON IMÁGENES
+            const specialCard = { 
+                image1: 'imagenes/yo.jpg', 
+                image2: 'imagenes/ella.jpg', // Misma imagen para ambas cartas
+                isSpecial: true 
+            };
+            
+            // Inicializar el juego
+            function initGame() {
+                clearInterval(timerInterval);
+                attempts = 0;
+                matches = 0;
+                timer = 0;
+                flippedCards = [];
+                lockBoard = false;
+                lastPairLocked = true;
+                specialCardUnlocked = false;
+                specialNotice.style.display = 'none';
+                specialCardNotice.style.display = 'none';
+                winMessage.style.display = 'none';
+                
+                attemptsElement.textContent = attempts;
+                matchesElement.textContent = `${matches}/${cardPairs.length}`;
+                timerElement.textContent = '0s';
+                progressBar.style.width = '0%';
+                
+                gameContainer.innerHTML = '';
+                
+                // Crear un array con todas las cartas (pares)
+                let cards = [];
+                cardPairs.forEach((pair, index) => {
+                    cards.push({ type: 'image', content: pair.image, id: index });
+                    cards.push({ type: 'text', content: pair.text, id: index });
+                });
+                
+                // Añadir la carta especial (bloqueada inicialmente) - AMBAS SON IMÁGENES
+                const specialId = cardPairs.length;
+                cards.push({ type: 'image', content: specialCard.image1, id: specialId, isSpecial: true });
+                cards.push({ type: 'image', content: specialCard.image2, id: specialId, isSpecial: true });
+                
+                // Mezclar las cartas
+                cards = shuffleArray(cards);
+                
+                // Crear las cartas en el DOM
+                cards.forEach((card, index) => {
+                    const cardElement = document.createElement('div');
+                    cardElement.classList.add('card');
+                    cardElement.dataset.id = card.id;
+                    
+                    // Si es una carta especial, bloquearla inicialmente
+                    if (card.isSpecial) {
+                        cardElement.classList.add('locked');
+                    }
+                    
+                    const cardFront = document.createElement('div');
+                    cardFront.classList.add('card-front');
+                    
+                    const cardBack = document.createElement('div');
+                    cardBack.classList.add('card-back');
+                    
+                    if (card.type === 'image') {
+                        cardBack.classList.add('image');
+                        cardBack.style.backgroundImage = `url('${card.content}')`;
+                        cardBack.style.backgroundSize = 'cover';
+                        cardBack.style.backgroundPosition = 'center';
+                    } else {
+                        cardBack.classList.add('text');
+                        cardBack.textContent = card.content;
+                    }
+                    
+                    cardElement.appendChild(cardFront);
+                    cardElement.appendChild(cardBack);
+                    
+                    cardElement.addEventListener('click', flipCard);
+                    gameContainer.appendChild(cardElement);
+                });
+                
+                // Iniciar el temporizador
+                startTimer();
+            }
+            
+            // Barajar array (algoritmo Fisher-Yates)
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+            
+            // Voltear una carta
+            function flipCard() {
+                if (lockBoard) return;
+                if (this === flippedCards[0]) return;
+                if (this.classList.contains('flipped')) return;
+                if (this.classList.contains('locked')) return;
+                
+                this.classList.add('flipped');
+                flippedCards.push(this);
+                
+                if (flippedCards.length === 2) {
+                    lockBoard = true;
+                    attempts++;
+                    attemptsElement.textContent = attempts;
+                    
+                    checkForMatch();
+                }
+            }
+            
+            // Comprobar si las cartas coinciden
+            function checkForMatch() {
+                const isMatch = flippedCards[0].dataset.id === flippedCards[1].dataset.id;
+                
+                if (isMatch) {
+                    disableCards();
+                    matches++;
+                    matchesElement.textContent = `${matches}/${cardPairs.length}`;
+                    
+                    // Actualizar barra de progreso
+                    progressBar.style.width = `${(matches/cardPairs.length)*100}%`;
+                    
+                    // Si se han encontrado todos los pares normales, desbloquear la carta especial
+                    if (matches === cardPairs.length && !specialCardUnlocked) {
+                        unlockSpecialCard();
+                    }
+                    
+                    // Comprobar si se ha completado el juego (todos los pares + el especial)
+                    if (matches === cardPairs.length + 1) {
+                        endGame();
+                    }
+                } else {
+                    unflipCards();
+                }
+            }
+            
+            // Desbloquear la carta especial
+            function unlockSpecialCard() {
+                specialCardUnlocked = true;
+                
+                // Quitar el bloqueo de las cartas especiales
+                document.querySelectorAll('.card.locked').forEach(card => {
+                    card.classList.remove('locked');
+                });
+                
+                // Mostrar notificación
+                specialCardNotice.style.display = 'block';
+                
+                // Ocultar notificación después de 5 segundos
+                setTimeout(() => {
+                    specialCardNotice.style.display = 'none';
+                }, 5000);
+            }
+            
+            // Deshabilitar cartas coincidentes
+            function disableCards() {
+                flippedCards.forEach(card => {
+                    card.style.pointerEvents = 'none';
+                });
+                
+                resetBoard();
+            }
+            
+            // Volver a voltear las cartas si no coinciden
+            function unflipCards() {
+                setTimeout(() => {
+                    flippedCards.forEach(card => {
+                        card.classList.remove('flipped');
+                    });
+                    
+                    resetBoard();
+                }, 1000);
+            }
+            
+            // Reiniciar el tablero después de cada turno
+            function resetBoard() {
+                [lockBoard, flippedCards] = [false, []];
+            }
+            
+            // Iniciar temporizador
+            function startTimer() {
+                timerInterval = setInterval(() => {
+                    timer++;
+                    timerElement.textContent = `${timer}s`;
+                }, 1000);
+            }
+            
+            // Finalizar el juego
+            function endGame() {
+                clearInterval(timerInterval);
+                
+                setTimeout(() => {
+                    finalAttempts.textContent = attempts;
+                    finalTime.textContent = `${timer}`;
+                    finalImage.src = customFinalImage;
+                    winMessage.style.display = 'flex';
+                    
+                    // Aplicar el efecto de zoom después de un breve retraso
+                    setTimeout(() => {
+                        finalImage.classList.add('zoomed');
+                    }, 100);
+                }, 500);
+            }
+            
+            // Event listeners
+            resetBtn.addEventListener('click', initGame);
+            playAgainBtn.addEventListener('click', initGame);
+            closeWinBtn.addEventListener('click', () => {
+                winMessage.style.display = 'none';
+                finalImage.classList.remove('zoomed');
+            });
+            
+            // Iniciar el juego cuando se carga la página
+            initGame();
+        });
+    </script>
+</body>
+</html>
